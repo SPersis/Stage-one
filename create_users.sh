@@ -4,12 +4,14 @@
 # Description: Create users and groups from input file, set up home directories,
 #              generate passwords, and log actions.
 
-# Input file: users.txt (format: username;groups)
+# Input file: users.txt (format: username;groups)\
+# To learn More about the initiative behind this project, click the link below.
+# https://hng.tech/internship, https://hng.tech/hire,
 
 # Log file
-LOG_FILE="/var/log/user_management.log"
+LOG_FILE="/home/vagrant/user_management.log"
 # Secure password storage
-PASSWORD_FILE="/var/secure/user_passwords.txt"
+PASSWORD_FILE="/home/vagrant/user_passwords.txt"
 
 # Check if script is run as root
 if [ "$(id -u)" -ne 0 ]; then
