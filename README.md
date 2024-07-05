@@ -1,10 +1,14 @@
-Bash Script: create_users.sh
+**Bash Script: create_users.sh**
+
+
+=============================
+
 This repository contains a Bash script to automate the creation of users and groups from a text file.
 
-Overview
+**Overview**
 The create_users.sh Bash script automates the creation of user accounts on a Linux system based on data provided in a text file. It ensures users are set up with appropriate groups, permissions, and random passwords, while logging all operations for accountability.
 
-Features
+**Features**
 User Creation: Reads user data from a specified file and creates users with home directories.
 Group Management: Assigns users to personal groups based on their usernames and additional groups specified in the input file.
 Password Generation: Generates secure, random passwords for each user and stores them securely.
@@ -26,7 +30,9 @@ Run the script:
 sudo ./create_users.sh users.txt
 Replace users.txt with your actual input file containing user data.
 
+$$
 Verify user creation:
+$$
 
 Check /var/log/user_management.log for detailed logs of each operation.
 Access generated passwords securely from /var/secure/user_passwords.txt.
