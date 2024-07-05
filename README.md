@@ -1,28 +1,37 @@
-The script user_management.sh automates user creation with secure password handling and logging. Here’s a breakdown of its functionality:
+Bash Script: create_users.sh
+This repository contains a Bash script to automate the creation of users and groups from a text file.
 
-Variables:
+Overview
+The create_users.sh Bash script automates the creation of user accounts on a Linux system based on data provided in a text file. It ensures users are set up with appropriate groups, permissions, and random passwords, while logging all operations for accountability.
 
-LOG_FILE specifies the path for logging user creation activities.
-PASSWORD_FILE stores user passwords securely.
-Root Privilege Check:
+Features
+User Creation: Reads user data from a specified file and creates users with home directories.
+Group Management: Assigns users to personal groups based on their usernames and additional groups specified in the input file.
+Password Generation: Generates secure, random passwords for each user and stores them securely.
+Logging: Logs all actions performed by the script to /var/log/user_management.log.
+Secure Storage: Passwords are stored securely in /var/secure/user_passwords.txt.
+Prerequisites
+Root Privileges: Ensure the script is executed with root privileges (sudo).
+Input File: Provide a properly formatted input file (users.txt) containing user data in the format username;groups.
+Usage
+Clone the repository:
 
-The script verifies if it is executed with root privileges (root user ID 0). If not, it exits with an error message.
-Function generate_password:
+git clone https://github.com/your_username/your_repository.git
+cd your_repository
+Make the script executable:
 
-Generates a random alphanumeric password of length 12 using OpenSSL and stores it securely.
-Function create_user:
+chmod +x create_users.sh
+Run the script:
 
-Creates a new user with a specified username and assigns them to specified groups.
-Checks if the user already exists before attempting creation.
-Sets the generated password for the user and logs both the username and password securely in PASSWORD_FILE.
-Adds the user to specified groups, creating the groups if they do not exist.
-Logs the creation process including username, assigned groups, and home directory path.
-Main Script:
+sudo ./create_users.sh users.txt
+Replace users.txt with your actual input file containing user data.
 
-Checks if users.txt exists and is readable. If not, it exits with an error message.
-Reads users.txt line by line, where each line contains a username and a comma-separated list of groups.
-Calls create_user function for each user specified in users.txt.
-Completion Message:
+Verify user creation:
 
-Once all users from users.txt are processed, it outputs "User creation process completed."
-This script facilitates automated user management with robust security measures and detailed logging, ensuring efficient user creation and management in a controlled environment.
+Check /var/log/user_management.log for detailed logs of each operation.
+Access generated passwords securely from /var/secure/user_passwords.txt.
+Example User Data Format
+Ensure your input file (users.txt) follows this format:
+
+username1; group1, group2
+username2; group3
