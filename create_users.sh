@@ -1,75 +1,81 @@
 #!/bin/bash
 
-# Script: create_users.sh
-# Description: Create users and groups from input file, set up home directories,
-#              generate passwords, and log actions.
-
-# Input file: users.txt (format: username;groups)
-# To learn More about the initiative behind this project, click the link below.
-# https://hng.tech/internship, https://hng.tech/hire,
-
-# Log file
-LOG_FILE="/var/log/user_management.log"
-# Secure password storage
-PASSWORD_FILE="/var/secure/user_passwords.txt"
-
-# Check if script is run as root
-if [ "$(id -u)" -ne 0 ]; then
-    echo "This script must be run as root" >&2
-    exit 1
+# Check if the script is run as root
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root"
+  exit 1
 fi
 
-# Function to generate random password
+# Check if filename is provided
+if [ -z "$1" ]; then
+  echo "Usage: $0 <user-data-file>"
+  exit 1
+fi
+
+# Variables
+user_data_file="$1"
+log_file="/var/log/user_management.log"
+password_file="/var/secure/user_passwords.txt"
+
+# Create necessary directories and set permissions
+mkdir -p /var/secure
+chmod 700 /var/secure
+
+# Clear or create log and password files
+> $log_file
+> $password_file
+chmod 600 $password_file
+
+# Function to create a random password
 generate_password() {
-    local password_length=12
-    local password=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9' | head -c "$password_length")
-    echo "$password"
+  openssl rand -base64 12
 }
 
-# Function to create user
-create_user() {
-    local username="$1"
-    local groups="$2"
-    
-    # Check if user already exists
-    if id "$username" &>/dev/null; then
-        echo "User '$username' already exists. Skipping." | tee -a "$LOG_FILE"
-        return
-    fi
-    
-    # Create user with home directory and set password
-    useradd -m -s /bin/bash "$username"
-    
-    # Set password
-    local password=$(generate_password)
-    echo "$username:$password" | chpasswd
-    
-    # Store password securely
-    echo "$username:$password" >> "$PASSWORD_FILE"
-    chmod 600 "$PASSWORD_FILE"
-    
-    # Add user to groups
+# Read user data file and process each line
+while IFS=";" read -r username groups; do
+  # Remove leading/trailing whitespaces
+  username=$(echo $username | xargs)
+  groups=$(echo $groups | xargs)
+
+  # Check if user already exists
+  if id "$username" &>/dev/null; then
+    echo "User $username already exists." | tee -a $log_file
+    continue
+  fi
+
+  # Create user with home directory
+  useradd -m -s /bin/bash $username
+  if [ $? -ne 0 ]; then
+    echo "Failed to create user $username." | tee -a $log_file
+    continue
+  fi
+
+  # Create a personal group for the user
+  usermod -aG $username $username
+
+  # Add user to additional groups
+  if [ -n "$groups" ]; then
     IFS=',' read -ra group_list <<< "$groups"
     for group in "${group_list[@]}"; do
-        groupadd "$group"  # Create group if it doesn't exist
-        usermod -aG "$group" "$username"
+      group=$(echo $group | xargs)
+      if ! getent group $group &>/dev/null; then
+        groupadd $group
+      fi
+      usermod -aG $group $username
     done
-    
-    # Logging
-    echo "Created user '$username' with groups '$groups' and home directory '$(eval echo ~$username)'." | tee -a "$LOG_FILE"
-}
+  fi
 
-# Main script
+  # Set up home directory permissions
+  chmod 755 /home/$username
+  chown $username:$username /home/$username
 
-# Check if users.txt exists and readable
-if [ ! -f "users.txt" ]; then
-    echo "users.txt not found!" >&2
-    exit 1
-fi
+  # Generate and set random password
+  password=$(generate_password)
+  echo "$username:$password" | chpasswd
+  echo "$username,$password" >> $password_file
 
-# Read each line from users.txt
-while IFS=';' read -r username groups; do
-    create_user "$username" "$groups"
-done < "users.txt"
+  # Log actions
+  echo "Created user $username with groups $groups" | tee -a $log_file
+done < "$user_data_file"
 
-echo "User creation process completed."
+echo "User creation process completed." | tee -a $log_file
